@@ -7,7 +7,6 @@ An interactive space-weather platform connecting public observations, CME propag
 
 The live demo is hosted with ChatGPT Sites. This repository is a source snapshot; pushing changes here does not automatically update that deployment. The application uses server API routes, Cloudflare Workers/D1, and ChatGPT sign-in for saved notes. GitHub Pages cannot run the full application unchanged. A separate production deployment must configure its own database and trusted authentication; the local preview's mock identity is for local development only.
 
-The original hosted project ID is intentionally omitted from `.openai/hosting.json`. No production database records, local environment files, credentials, or original Git history are included. Third-party source and dataset attributions are retained below.
 
 
 宇宙天気の実観測、CME伝播モデル、論文の判断根拠、研究ノートをつなぐWebプラットフォーム。
