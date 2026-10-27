@@ -1,6 +1,5 @@
 # HELIOS — Space Weather Lab
 
-**Live demo:** https://helios-space-weather-lab-taro.tarofractal.chatgpt.site/?view=overview
 
 An interactive space-weather platform connecting public observations, CME propagation models, historical event replay, and research notes.
 
