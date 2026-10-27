@@ -1,0 +1,115 @@
+{
+  "source": "NOAA NCEI GOES-16 EXIS XRS",
+  "retrievedAt": "2026-10-27T16:22:52.595697+00:00",
+  "product": "sci_xrsf-l2-avg1m",
+  "version": "2-2-2",
+  "rows": 8640,
+  "simulated": false,
+  "interpolationAppliedByUs": false,
+  "reprocessedArchive": true,
+  "timeDefinition": "Record start time; original units seconds since 2000-01-01 12:00:00 UTC, ignoring leap seconds; decoded to ISO UTC. 60-second averages.",
+  "metadata": {
+    "time": {
+      "long_name": "Record start time. Neglects leap seconds since 2000-01-01.",
+      "units": "seconds since 2000-01-01 12:00:00 UTC",
+      "_FillValue": [
+        -9999.0
+      ]
+    },
+    "xrsa_flux": {
+      "long_name": "XRS-A primary average flux.",
+      "units": "W/m2",
+      "_FillValue": [
+        -9999.0
+      ]
+    },
+    "xrsb_flux": {
+      "long_name": "XRS-B primary average flux.",
+      "units": "W/m2",
+      "_FillValue": [
+        -9999.0
+      ]
+    },
+    "xrsa_flag": {
+      "long_name": "Flags for xrsa_flux.",
+      "_FillValue": [
+        255
+      ],
+      "flag_values": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "flag_meanings": "good_data eclipse bad_data interpolated"
+    },
+    "xrsb_flag": {
+      "long_name": "Flags for xrsb_flux.",
+      "_FillValue": [
+        255
+      ],
+      "flag_values": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "flag_meanings": "good_data eclipse bad_data interpolated"
+    }
+  },
+  "channelMap": {
+    "xrsa": "xrsa_flux: short 0.05–0.4 nm / 0.5–4 Å",
+    "xrsb": "xrsb_flux: long 0.1–0.8 nm / 1–8 Å"
+  },
+  "qualityTreatment": "Only flag==0 good_data, finite, positive flux is displayed. Other flags and fill values become null. Flags remain in each row. No user-side interpolation.",
+  "flagCounts": {
+    "xrsa": {
+      "0": 8632,
+      "4": 8
+    },
+    "xrsb": {
+      "0": 8632,
+      "4": 8
+    }
+  },
+  "files": [
+    {
+      "name": "sci_xrsf-l2-avg1m_g16_d20240508_v2-2-2.nc",
+      "url": "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes16/l2/data/xrsf-l2-avg1m_science/2024/05/sci_xrsf-l2-avg1m_g16_d20240508_v2-2-2.nc",
+      "sha256": "68439b93411d8c43076fc9dc08fcf81c7f9b85dbd6936e69e8ca8ffd4a97b7f1"
+    },
+    {
+      "name": "sci_xrsf-l2-avg1m_g16_d20240509_v2-2-2.nc",
+      "url": "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes16/l2/data/xrsf-l2-avg1m_science/2024/05/sci_xrsf-l2-avg1m_g16_d20240509_v2-2-2.nc",
+      "sha256": "0f457f2ed5bb51fc8522d19e95c1006d58768af87684b9cc054d73bdd347d936"
+    },
+    {
+      "name": "sci_xrsf-l2-avg1m_g16_d20240510_v2-2-2.nc",
+      "url": "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes16/l2/data/xrsf-l2-avg1m_science/2024/05/sci_xrsf-l2-avg1m_g16_d20240510_v2-2-2.nc",
+      "sha256": "93146eb0a920a8c0cfe5f74897c90978e17006f8280dcc73a5f99aeafec8ba16"
+    },
+    {
+      "name": "sci_xrsf-l2-avg1m_g16_d20240511_v2-2-2.nc",
+      "url": "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes16/l2/data/xrsf-l2-avg1m_science/2024/05/sci_xrsf-l2-avg1m_g16_d20240511_v2-2-2.nc",
+      "sha256": "3c182c423a4c94bd87872705362d7ae1f209b5e42cdfe7ac86ef78db3498e3fc"
+    },
+    {
+      "name": "sci_xrsf-l2-avg1m_g16_d20240512_v2-2-2.nc",
+      "url": "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes16/l2/data/xrsf-l2-avg1m_science/2024/05/sci_xrsf-l2-avg1m_g16_d20240512_v2-2-2.nc",
+      "sha256": "924c0f020a67a16ea2da2f881ea9f313e694ab0cae8b77b0bfdf08f646d51a80"
+    },
+    {
+      "name": "sci_xrsf-l2-avg1m_g16_d20240513_v2-2-2.nc",
+      "url": "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes16/l2/data/xrsf-l2-avg1m_science/2024/05/sci_xrsf-l2-avg1m_g16_d20240513_v2-2-2.nc",
+      "sha256": "15afd5e7cd3ec49b9210d71dacce8f82f96a424977890dbca1f3ffdbcdfab44d"
+    }
+  ],
+  "normalizedFile": "goes16_xray_may2024.json",
+  "maxXrsb": {
+    "time_tag": "2024-05-11T01:23:00Z",
+    "xrsa": 0.00018208696565125138,
+    "xrsb": 0.0005820638034492731,
+    "xrsa_flag": 0,
+    "xrsb_flag": 0
+  }
+}

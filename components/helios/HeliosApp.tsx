@@ -1,0 +1,64 @@
+'use client';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowRight, BookOpen, ChevronDown, CircleHelp, Database, FileText, FlaskConical, Globe2, History, Info, Loader2, Menu, Orbit, RefreshCw, Settings2, ShieldCheck } from 'lucide-react';
+import snapshot from '@/data/snapshot.json';
+import { latest, formatTime, DAY, HOUR, coneIntersection } from '@/lib/physics';
+import type { CME, View, WeatherBundle } from '@/lib/types';
+import { ObservationView } from './ObservationView';
+import { ModelLab } from './ModelLab';
+import { PaperExplorer } from './PaperExplorer';
+import { AuroraView } from './AuroraView';
+import { NotesView } from './NotesView';
+import { ValidationView } from './ValidationView';
+import { Modal, SourceLink, formatAge } from './UI';
+const NAV=[{id:'overview',label:'オブザーバトリー',en:'Observatory',icon:Orbit},{id:'replay',label:'過去イベント',en:'Event replay',icon:History},{id:'models',label:'モデル実験室',en:'Model lab',icon:FlaskConical},{id:'paper',label:'論文を探索',en:'Paper explorer',icon:FileText},{id:'aurora',label:'オーロラと空',en:'Aurora planner',icon:Globe2},{id:'notes',label:'研究ノート',en:'Research notes',icon:BookOpen},{id:'validation',label:'検証と出典',en:'Validation',icon:ShieldCheck}] as const;
+const TITLES:Record<View,{kicker:string;title:string;subtitle:string}>={
+ overview:{kicker:'SOLAR–TERRESTRIAL OBSERVATORY',title:'宇宙天気を、俯瞰する。',subtitle:'太陽の活動から地球の応答まで。公開観測と物理モデルでたどる宇宙天気。'},
+ replay:{kicker:'SPACE WEATHER ARCHIVE',title:'あの嵐を、もう一度。',subtitle:'過去の実観測を同じ時間軸で再生し、現象のつながりを確かめる。'},
+ models:{kicker:'PHYSICS PLAYGROUND',title:'モデル実験室',subtitle:'仮定とパラメータから、結果が変わる理由を探る。'},
+ paper:{kicker:'EXPLAINABLE SPACE WEATHER',title:'論文エクスプローラー',subtitle:'研究の式を、操作できる知識に。'},
+ aurora:{kicker:'AURORA OBSERVATION PLANNER',title:'オーロラと、夜の空。',subtitle:'宇宙側の活動と地上の観測条件を、一つの場所で。'},
+ notes:{kicker:'BUILD · OBSERVE · UNDERSTAND',title:'研究ノート',subtitle:'実装と観測から得た発見を、次の問いにつなぐ。'},
+ validation:{kicker:'SCIENCE YOU CAN INSPECT',title:'検証とデータの来歴',subtitle:'結果の根拠・時刻・限界を、開いて確かめる。'},
+};
+const initial=snapshot as unknown as WeatherBundle;
+const anchor=(b:WeatherBundle)=>latest(b.series.bz)?.t??latest(b.series.speed)?.t??Date.now();
+const firstCME=(b:WeatherBundle)=>b.cmes.find(c=>coneIntersection(c)&&c.t0&&c.t0<=anchor(b)&&anchor(b)-c.t0<5*DAY)??b.cmes.find(c=>c.t0&&c.t0<=anchor(b)&&c.lat!==null&&c.lon!==null&&anchor(b)-c.t0<3*DAY)??b.cmes[0];
+export default function HeliosApp(){
+ const [view,setView]=useState<View>('overview'),[live,setLive]=useState<WeatherBundle>(initial),[replay,setReplay]=useState<WeatherBundle|null>(null),[selected,setSelected]=useState<string|null>(firstCME(initial)?.id??null),[time,setTimeState]=useState(anchor(initial)),[playing,setPlaying]=useState(false),[speed,setSpeed]=useState(3),[tz,setTz]=useState('UTC'),[busy,setBusy]=useState(true),[dataModal,setDataModal]=useState(false),[help,setHelp]=useState(false),[mobileNav,setMobileNav]=useState(false),[modelSeed,setModelSeed]=useState<CME|null>(null),[error,setError]=useState('');
+ const following=useRef(true),activeView=useRef<View>('overview');activeView.current=view;
+ const setTime=(t:number)=>{following.current=false;setTimeState(t);};
+ const fetchLive=async(force=false)=>{setBusy(true);setError('');try{const r=await fetch('/api/space-weather'+(force?'?refresh=1':''));if(!r.ok)throw new Error();const b=await r.json() as WeatherBundle;setLive(b);if(following.current&&activeView.current==='overview')setTimeState(anchor(b));}catch{setError('接続を更新できませんでした。取得済みの観測を表示しています。');}finally{setBusy(false);}};
+ useEffect(()=>{
+  const q=new URLSearchParams(location.search),requested=q.get('view');if(NAV.some(n=>n.id===requested)){setView(requested as View);activeView.current=requested as View;}
+  if(q.get('event'))setSelected(q.get('event'));const t=Date.parse(q.get('t')??'');if(Number.isFinite(t)){setTimeState(t);following.current=false;}
+  try{const stored=localStorage.getItem('helios-timezone');if(['UTC','Asia/Tokyo','America/New_York'].includes(stored??''))setTz(stored!);}catch{}
+  fetchLive();fetch('/data/replay-gannon.json').then(r=>r.json()).then(raw=>{const b=raw as WeatherBundle;setReplay(b);if(requested==='replay'&&!Number.isFinite(t)){setTimeState(Date.parse('2024-05-10T19:00Z'));setSelected(b.cmes.find(c=>c.id==='2024-05-08T05:36:00-CME-001')?.id??b.cmes[0]?.id??null);following.current=false;}}).catch(()=>{});
+  const id=setInterval(()=>{if(!document.hidden)fetchLive();},60000);return()=>clearInterval(id);
+ },[]);
+ useEffect(()=>{if(!playing)return;const id=setInterval(()=>{following.current=false;setTimeState(t=>{const max=view==='replay'?Date.parse('2024-05-14T00:00Z'):(live.cmes.find(c=>c.id===selected)?.t0??anchor(live))+6*DAY;if(t>=max){setPlaying(false);return max;}return Math.min(max,t+speed*HOUR/10);});},100);return()=>clearInterval(id);},[playing,speed,view,live,selected]);
+ const navigate=(next:View)=>{setView(next);setPlaying(false);setMobileNav(false);const u=new URL(location.href);u.searchParams.set('view',next);u.searchParams.delete('t');u.searchParams.delete('event');history.replaceState(null,'',u);if(next==='replay'&&replay){following.current=false;setTimeState(Date.parse('2024-05-10T19:00Z'));setSelected(replay.cmes.find(c=>c.id==='2024-05-08T05:36:00-CME-001')?.id??replay.cmes[0]?.id??null);}if(next==='overview'){following.current=true;setTimeState(anchor(live));setSelected(firstCME(live)?.id??null);}window.scrollTo({top:0,behavior:'instant'});};
+ useEffect(()=>{const fn=(e:KeyboardEvent)=>{if((e.target as HTMLElement)?.matches('input,textarea,select')||view!=='overview'&&view!=='replay')return;if(e.code==='Space'){e.preventDefault();setPlaying(x=>!x);}if(e.key==='ArrowRight')setTime(time+HOUR);if(e.key==='ArrowLeft')setTime(time-HOUR);if(e.key.toLowerCase()==='l')navigate('overview');};window.addEventListener('keydown',fn);return()=>window.removeEventListener('keydown',fn);},[view,time]);
+ const onModel=(c:CME)=>{setModelSeed(c);navigate('models');};
+ const dataset=view==='replay'&&replay?replay:live,title=TITLES[view],stale=Date.now()-anchor(live)>15*60000,snapshotCount=live.feeds.filter(f=>f.state!=='live').length;
+ return <div className="app-shell"><aside className={'sidebar '+(mobileNav?'mobile-open':'')}>
+  <a className="brand" href="/?view=overview" onClick={e=>{e.preventDefault();navigate('overview');}} aria-label="HELIOS ホーム"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="5.5" fill="currentColor"/><ellipse cx="20" cy="20" rx="18" ry="8.2" transform="rotate(-45 20 20)" fill="none" stroke="currentColor" strokeWidth="1.3"/><path d="M20 1v7M20 32v7M1 20h7M32 20h7" stroke="currentColor" strokeWidth="1.3"/></svg><strong>HELIOS<span>SPACE WEATHER LAB</span></strong></a>
+  <div className="nav-group-label">EXPLORE THE CONNECTION</div><nav>{NAV.map(n=><button key={n.id} className={view===n.id?'active':''} onClick={()=>navigate(n.id)}><n.icon size={18}/><div><span>{n.label}</span><small>{n.en}</small></div>{view===n.id&&<i/>}</button>)}</nav>
+  <div className="sidebar-project"><div className="eyebrow">RESEARCH WORKSPACE</div><p>太陽と地球の間にある、<br/>「なぜ」を見つけよう。</p><span><i className="dot mint"/>Observe. Model. Understand.</span></div>
+  <div className="sidebar-bottom"><button onClick={()=>setDataModal(true)}><Database size={16}/>データ接続<span className={'status-pip '+(snapshotCount||stale?'amber':'')}/></button><button onClick={()=>setHelp(true)}><CircleHelp size={16}/>使い方とモデルについて</button><div className="workspace-profile"><div className="profile-avatar">TN</div><div><b>Taro's Research Lab</b><small>Private research workspace</small></div><ShieldCheck size={13}/></div></div>
+ </aside>{mobileNav&&<button className="sidebar-scrim" aria-label="メニューを閉じる" onClick={()=>setMobileNav(false)}/>}
+ <div className="main-shell"><header className="topbar"><div className="breadcrumb"><button className="icon-button mobile-menu" title="メニューを開く" onClick={()=>setMobileNav(x=>!x)}><Menu size={20}/></button><span>WORKSPACE</span><i>/</i><b>{NAV.find(n=>n.id===view)?.en}</b></div><div className="topbar-actions"><span className="topbar-date">{formatTime(time,tz)} <small>{tz==='UTC'?'UTC':tz==='Asia/Tokyo'?'JST':'ET'}</small></span><select aria-label="表示タイムゾーン" value={tz} onChange={e=>{setTz(e.target.value);try{localStorage.setItem('helios-timezone',e.target.value);}catch{}}}><option value="UTC">UTC</option><option value="Asia/Tokyo">JST</option><option value="America/New_York">ET</option></select><span className="topbar-divider"/><button className="icon-button" title="データの接続状態" onClick={()=>setDataModal(true)}><Settings2 size={16}/></button></div></header>
+ <main><div className="page-heading"><div><span className="eyebrow">{title.kicker}</span><h1>{title.title}</h1><p>{title.subtitle}</p></div><div className="page-heading-actions">{view==='overview'?<><span className={'connection-status '+(stale||snapshotCount?'delayed':'')}><i/>{busy?'CONNECTING':stale?'DELAYED':snapshotCount?'PARTIAL CACHE':'LIVE DATA'}</span><button className="small-button" onClick={()=>fetchLive(true)} disabled={busy}><RefreshCw size={13} className={busy?'spinning':''}/>{busy?'取得中':'更新'}</button></>:<button className="small-button" onClick={()=>setDataModal(true)}><Database size={14}/>データと出典</button>}</div></div>
+ {view==='overview'&&(stale||error||snapshotCount>0)&&<div className="data-status-strip"><Info size={13}/><span>{error||(stale?`最終観測は${formatAge(anchor(live))}。上流データの遅延を含みます。各系列の時刻を確認してください。`:`${snapshotCount}製品は保存済みデータを表示しています。`)}</span><button onClick={()=>setDataModal(true)}>詳細 <ArrowRight size={12}/></button></div>}
+ {(view==='overview'||view==='replay')&&(view==='overview'||replay)?<ObservationView bundle={dataset} selected={selected} onSelect={setSelected} time={time} setTime={setTime} playing={playing} setPlaying={setPlaying} speed={speed} setSpeed={setSpeed} tz={tz} onLive={()=>{following.current=true;setTimeState(anchor(live));setPlaying(false);}} onModel={onModel} onSources={()=>setDataModal(true)} replay={view==='replay'}/>:view==='replay'?<div className="empty-state"><Loader2 size={20} className="spinning"/>過去の観測記録を読み込んでいます。</div>:null}
+ {view==='models'&&<ModelLab seed={modelSeed} cmes={live.cmes} tz={tz}/>}{view==='paper'&&<PaperExplorer/>}{view==='aurora'&&<AuroraView tz={tz}/>}{view==='notes'&&<NotesView onLab={()=>navigate('models')}/>}{view==='validation'&&<ValidationView live={live} replay={replay} tz={tz}/>}
+ <footer className="site-footer"><span><span className="footer-symbol">✳</span> HELIOS <i>SPACE WEATHER LAB</i></span><p>公開観測・研究モデル・自分の発見をつなぐ。<button onClick={()=>setDataModal(true)}>Data & provenance <ArrowRight size={11}/></button></p><small>NASA · NOAA · GFZ · WDC Kyoto</small></footer></main></div>
+ {dataModal&&<Modal title="データ接続と出典" onClose={()=>setDataModal(false)}><p className="modal-description">各製品は独立して取得します。取得に失敗した製品は、最後に取得できた実データへ切り替わります。画面を開いている間は約1分ごとに更新します。</p><div className="feed-status-list">{live.feeds.map(f=>{const age=f.lastObserved?Date.now()-f.lastObserved:Infinity,delayed=['wind','mag','xray','proton'].includes(f.id)&&age>15*60000;return <div className="feed-status-row" key={f.id}><div><i className={'dot '+(f.state!=='live'||delayed?'orange':'mint')}/><b>{f.label}</b><span className={'badge '+(f.state!=='live'||delayed?'orange':'mint')}>{f.state!=='live'?'保存済み':delayed?'観測遅延':'取得成功'}</span></div><dl><div><dt>最終観測 / 製品時刻</dt><dd>{formatTime(f.lastObserved,'UTC')} UTC</dd></div><div><dt>取得時刻</dt><dd>{formatTime(Date.parse(f.fetchedAt),'UTC')} UTC</dd></div><div><dt>保持する点数</dt><dd>{f.count.toLocaleString()}</dd></div></dl><p>{f.timeReference}</p>{f.error&&<small className="orange-text">今回の取得：{f.error}</small>}<SourceLink href={f.sourceUrl}>公式データを開く</SourceLink></div>;})}</div><div className="modal-source-links"><SourceLink href="/data/replay-provenance.json">履歴データの来歴</SourceLink><SourceLink href="/data/snapshot.json">同梱した観測スナップショット</SourceLink><SourceLink href="https://www.spaceweather.gov/noaa-scales-explanation">NOAA G / S / R scales</SourceLink></div><div className="modal-actions"><button className="small-button" disabled={busy} onClick={()=>fetchLive(true)}><RefreshCw size={14} className={busy?'spinning':''}/>再取得</button><button className="primary-button" onClick={()=>{setDataModal(false);navigate('validation');}}>検証画面を開く <ArrowRight size={13}/></button></div></Modal>}
+ {help&&<Modal title="HELIOSの使い方" onClose={()=>setHelp(false)}><div className="help-content">{[
+ ['イベントを選び、時間を動かす','CME一覧の行を選択し、再生ボタンかスライダーで太陽圏を探索します。Spaceで再生、左右矢印で1時間移動、Lで最新観測に戻ります。'],
+ ['仮定を確認して、モデルを比較する','モデル実験室で速度・背景風・抗力を変更できます。図の天体サイズは誇張。到着はコーン先端の1 AU到達で、地球への命中や嵐の強度とは別の計算です。'],
+ ['論文を操作し、学びを残す','論文の条件式は仮想入力による論理実験です。研究ノートに自分の説明と出典を追加し、Markdownでも保存できます。'],
+ ['観測と推定を見分ける','グラフは実観測、宇宙空間のCMEは独自DBM計算、オーロラ分布はNOAAのモデル出力です。遅延と保存済みデータは接続状態に表示します。']
+ ].map(([head,body],i)=><div key={head}><span>0{i+1}</span><section><h3>{head}</h3><p>{body}</p></section></div>)}</div></Modal>}
+ </div>;
+}

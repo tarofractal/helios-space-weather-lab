@@ -1,0 +1,312 @@
+{
+  "dataset": "May 8–13, 2024 historical observations",
+  "retrievedAt": "2026-10-27T16:21:18.486503+00:00",
+  "startInclusive": "2024-05-08T00:00:00Z",
+  "stopExclusive": "2024-05-14T00:00:00Z",
+  "simulated": false,
+  "interpolationApplied": false,
+  "primaryDisplayFile": "historical_may2024.json",
+  "sources": [
+    {
+      "id": "OMNI_HRO2_5MIN",
+      "organization": "NASA SPDF / OMNI",
+      "metadataUrl": "https://cdaweb.gsfc.nasa.gov/hapi/info?id=OMNI_HRO2_5MIN",
+      "dataUrl": "https://cdaweb.gsfc.nasa.gov/hapi/data?id=OMNI_HRO2_5MIN&parameters=Time%2CIMF%2CPLS%2CTimeshift%2CF%2CBZ_GSM%2Cflow_speed%2Cproton_density%2CPressure%2CSYM_H&time.min=2024-05-08T00%3A00%3A00Z&time.max=2024-05-14T00%3A00%3A00Z&format=json",
+      "metadataFile": "omni_hro2_5min_metadata.json",
+      "rawFile": "omni_hro2_5min_raw.json",
+      "sampleCadenceSeconds": 300,
+      "rows": 1728,
+      "timeReference": "Solar wind/IMF already time-shifted to arrival at Earth bow shock nose; DO NOT add L1-to-Earth travel time again. SYM_H is a ground magnetic index.",
+      "documentation": "https://omniweb.gsfc.nasa.gov/html/omni_min_data.html",
+      "fieldMap": {
+        "Time": "time_tag",
+        "IMF": "imf_source_code",
+        "PLS": "plasma_source_code",
+        "Timeshift": "timeshift_seconds",
+        "F": "bt",
+        "BZ_GSM": "bz_gsm",
+        "flow_speed": "proton_speed",
+        "proton_density": "proton_density",
+        "Pressure": "dynamic_pressure",
+        "SYM_H": "sym_h"
+      },
+      "units": {
+        "time_tag": "UTC",
+        "imf_source_code": null,
+        "plasma_source_code": null,
+        "timeshift_seconds": "seconds",
+        "bt": "nT",
+        "bz_gsm": "nT",
+        "proton_speed": "km/s",
+        "proton_density": "n/cc",
+        "dynamic_pressure": "nPa",
+        "sym_h": "nT"
+      },
+      "fillTreatment": "Exact numeric metadata fill values and non-finite values normalized to null; raw response preserved.",
+      "protonNote": "OMNI GOES proton flux series stops in 2020; intentionally not requested for 2024."
+    },
+    {
+      "id": "GFZ_Kp",
+      "organization": "GFZ Potsdam",
+      "dataUrl": "https://kp.gfz.de/app/json/?start=2024-05-08T00%3A00%3A00Z&end=2024-05-14T00%3A00%3A00Z&index=Kp",
+      "rawFile": "gfz_kp_may2024_raw.json",
+      "rows": 48,
+      "sampleCadenceSeconds": 10800,
+      "timeReference": "UTC start of the 3-hour Kp interval. Final entry at stopExclusive removed. Do not interpolate as 5-minute observations.",
+      "license": "CC BY 4.0",
+      "attribution": "GFZ Potsdam",
+      "statusLegend": {
+        "def": "definitive"
+      }
+    },
+    {
+      "id": "OMNI2_H0_MRG1HR",
+      "organization": "NASA SPDF / OMNI; Dst from WDC Kyoto",
+      "metadataUrl": "https://cdaweb.gsfc.nasa.gov/hapi/info?id=OMNI2_H0_MRG1HR",
+      "dataUrl": "https://cdaweb.gsfc.nasa.gov/hapi/data?id=OMNI2_H0_MRG1HR&parameters=Time%2CKP1800%2CDST1800&time.min=2024-05-08T00%3A00%3A00Z&time.max=2024-05-14T00%3A00%3A00Z&format=json",
+      "metadataFile": "omni2_hourly_metadata.json",
+      "rawFile": "omni2_hourly_raw.json",
+      "rows": 144,
+      "sampleCadenceSeconds": 3600,
+      "timeReference": "HAPI Time is the half-hour midpoint of each hourly averaging interval; valid_from/valid_until are preserved explicitly. Dst is a ground magnetic index, not an L1 observation.",
+      "fieldMap": {
+        "Time": "time_tag",
+        "DST1800": "dst",
+        "KP1800": "kp_times_ten"
+      },
+      "units": {
+        "dst": "nT",
+        "kp_times_ten": "Kp times 10"
+      },
+      "KpScaling": "KP1800 must be divided by 10. For the main display, use higher precision definitive 3-hour GFZ Kp."
+    }
+  ],
+  "quality": {
+    "nullCounts": {
+      "time_tag": 0,
+      "imf_source_code": 29,
+      "plasma_source_code": 300,
+      "timeshift_seconds": 29,
+      "bt": 29,
+      "bz_gsm": 29,
+      "proton_speed": 300,
+      "proton_density": 300,
+      "dynamic_pressure": 300,
+      "sym_h": 0
+    },
+    "windRows": 1728,
+    "kpRows": 48,
+    "dstRows": 144,
+    "firstWindTime": "2024-05-08T00:00:00.000Z",
+    "lastWindTime": "2024-05-13T23:55:00.000Z"
+  },
+  "files": [
+    {
+      "name": "gfz_kp_may2024_raw.json",
+      "bytes": 1774,
+      "sha256": "65e875df97e023e842e6712f9997165adc1bc46650692e0ef846ec9c0136e093"
+    },
+    {
+      "name": "historical_may2024.json",
+      "bytes": 401602,
+      "sha256": "d49181617eb7db9617f04982983fd8ae097d13203fb170aaceaa2878948f10f8"
+    },
+    {
+      "name": "omni2_hourly_metadata.json",
+      "bytes": 9060,
+      "sha256": "1ef6850579d4b742659eb34f309cd9beb6441b8fee11807b14053ef5c2d41984"
+    },
+    {
+      "name": "omni2_hourly_raw.json",
+      "bytes": 5900,
+      "sha256": "26c9b28793a3919a2f561d223a9d0ba7cf46c14fb1eb5a995eebc5b8b9f528ac"
+    },
+    {
+      "name": "omni_hro2_5min_metadata.json",
+      "bytes": 8118,
+      "sha256": "e57f04d1cd5500dd066a4e0d41bfd4d3a801f2111442c883c5a2c214f908385a"
+    },
+    {
+      "name": "omni_hro2_5min_raw.json",
+      "bytes": 127154,
+      "sha256": "11307542c5c10b0bd305fcf4186e7fd0f75e0073a05870b57bfb93a29e9e2440"
+    }
+  ],
+  "additionalSources": [
+    {
+      "source": "NOAA NCEI GOES-16 EXIS XRS",
+      "retrievedAt": "2026-10-27T16:22:52.595697+00:00",
+      "product": "sci_xrsf-l2-avg1m",
+      "version": "2-2-2",
+      "rows": 8640,
+      "simulated": false,
+      "interpolationAppliedByUs": false,
+      "reprocessedArchive": true,
+      "timeDefinition": "Record start time; original units seconds since 2000-01-01 12:00:00 UTC, ignoring leap seconds; decoded to ISO UTC. 60-second averages.",
+      "metadata": {
+        "time": {
+          "long_name": "Record start time. Neglects leap seconds since 2000-01-01.",
+          "units": "seconds since 2000-01-01 12:00:00 UTC",
+          "_FillValue": [
+            -9999
+          ]
+        },
+        "xrsa_flux": {
+          "long_name": "XRS-A primary average flux.",
+          "units": "W/m2",
+          "_FillValue": [
+            -9999
+          ]
+        },
+        "xrsb_flux": {
+          "long_name": "XRS-B primary average flux.",
+          "units": "W/m2",
+          "_FillValue": [
+            -9999
+          ]
+        },
+        "xrsa_flag": {
+          "long_name": "Flags for xrsa_flux.",
+          "_FillValue": [
+            255
+          ],
+          "flag_values": [
+            0,
+            1,
+            2,
+            4
+          ],
+          "flag_meanings": "good_data eclipse bad_data interpolated"
+        },
+        "xrsb_flag": {
+          "long_name": "Flags for xrsb_flux.",
+          "_FillValue": [
+            255
+          ],
+          "flag_values": [
+            0,
+            1,
+            2,
+            4
+          ],
+          "flag_meanings": "good_data eclipse bad_data interpolated"
+        }
+      },
+      "channelMap": {
+        "xrsa": "xrsa_flux: short 0.05–0.4 nm / 0.5–4 Å",
+        "xrsb": "xrsb_flux: long 0.1–0.8 nm / 1–8 Å"
+      },
+      "qualityTreatment": "Only flag==0 good_data, finite, positive flux is displayed. Other flags and fill values become null. Flags remain in each row. No user-side interpolation.",
+      "flagCounts": {
+        "xrsa": {
+          "0": 8632,
+          "4": 8
+        },
+        "xrsb": {
+          "0": 8632,
+          "4": 8
+        }
+      },
+      "files": [
+        {
+          "name": "sci_xrsf-l2-avg1m_g16_d20240508_v2-2-2.nc",
+          "url": "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes16/l2/data/xrsf-l2-avg1m_science/2024/05/sci_xrsf-l2-avg1m_g16_d20240508_v2-2-2.nc",
+          "sha256": "68439b93411d8c43076fc9dc08fcf81c7f9b85dbd6936e69e8ca8ffd4a97b7f1"
+        },
+        {
+          "name": "sci_xrsf-l2-avg1m_g16_d20240509_v2-2-2.nc",
+          "url": "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes16/l2/data/xrsf-l2-avg1m_science/2024/05/sci_xrsf-l2-avg1m_g16_d20240509_v2-2-2.nc",
+          "sha256": "0f457f2ed5bb51fc8522d19e95c1006d58768af87684b9cc054d73bdd347d936"
+        },
+        {
+          "name": "sci_xrsf-l2-avg1m_g16_d20240510_v2-2-2.nc",
+          "url": "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes16/l2/data/xrsf-l2-avg1m_science/2024/05/sci_xrsf-l2-avg1m_g16_d20240510_v2-2-2.nc",
+          "sha256": "93146eb0a920a8c0cfe5f74897c90978e17006f8280dcc73a5f99aeafec8ba16"
+        },
+        {
+          "name": "sci_xrsf-l2-avg1m_g16_d20240511_v2-2-2.nc",
+          "url": "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes16/l2/data/xrsf-l2-avg1m_science/2024/05/sci_xrsf-l2-avg1m_g16_d20240511_v2-2-2.nc",
+          "sha256": "3c182c423a4c94bd87872705362d7ae1f209b5e42cdfe7ac86ef78db3498e3fc"
+        },
+        {
+          "name": "sci_xrsf-l2-avg1m_g16_d20240512_v2-2-2.nc",
+          "url": "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes16/l2/data/xrsf-l2-avg1m_science/2024/05/sci_xrsf-l2-avg1m_g16_d20240512_v2-2-2.nc",
+          "sha256": "924c0f020a67a16ea2da2f881ea9f313e694ab0cae8b77b0bfdf08f646d51a80"
+        },
+        {
+          "name": "sci_xrsf-l2-avg1m_g16_d20240513_v2-2-2.nc",
+          "url": "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes16/l2/data/xrsf-l2-avg1m_science/2024/05/sci_xrsf-l2-avg1m_g16_d20240513_v2-2-2.nc",
+          "sha256": "15afd5e7cd3ec49b9210d71dacce8f82f96a424977890dbca1f3ffdbcdfab44d"
+        }
+      ],
+      "normalizedFile": "goes16_xray_may2024.json",
+      "maxXrsb": {
+        "time_tag": "2024-05-11T01:23:00Z",
+        "xrsa": 0.00018208696565125138,
+        "xrsb": 0.0005820638034492731,
+        "xrsa_flag": 0,
+        "xrsb_flag": 0
+      }
+    },
+    {
+      "sourcePage": "https://ccmc.gsfc.nasa.gov/swxcoe/clear/benchmark.php",
+      "dataUrl": "https://ccmc.gsfc.nasa.gov/swxcoe/clear/clear_data/standalone_products/goes_flux_time_series/fluxes_GOES-RT_integral_primary_20200308_20250910.csv",
+      "retrievedAt": "2026-10-27T16:25:53.858691+00:00",
+      "archive": "CLEAR-SRAG SEP Benchmark Dataset v2.0; operational integral fluxes as-is from NOAA archives",
+      "timeCoverage": {
+        "startInclusive": "2024-05-08T00:00:00Z",
+        "stopExclusive": "2024-05-14T00:00:00Z"
+      },
+      "rows": 1728,
+      "sourceFileBytes": 87050462,
+      "downloadMethod": "HTTP byte-range search by UTC date; original CSV header and requested date subset retained without changing flux strings",
+      "rawSubsetFile": "goes_rt_protons_may2024_subset.csv",
+      "rawSubsetSha256": "c5aad430c0b0e53e6bfeec829b43ec18b8cb5d6ab0482c50ca2b364a9cd7d82c",
+      "normalizedFile": "goes_rt_protons_may2024.json",
+      "fieldMap": {
+        "dates": "time_tag",
+        "5.0--1": "gt5",
+        "10.0--1": "gt10",
+        "30.0--1": "gt30",
+        "50.0--1": "gt50",
+        "60.0--1": "gt60",
+        "100.0--1": "gt100",
+        "500.0--1": "gt500"
+      },
+      "energyThresholdMeV": {
+        "gt5": 5,
+        "gt10": 10,
+        "gt30": 30,
+        "gt50": 50,
+        "gt60": 60,
+        "gt100": 100,
+        "gt500": 500
+      },
+      "units": "pfu = protons/(cm² s sr)",
+      "qualityTreatment": "Blank, negative and non-finite flux values become null; zero preserved. No interpolation or cross-calibration. Source time-series product does not supply per-record spacecraft or quality flags.",
+      "sourcePrimaryNote": "RT primary GOES-R+ series. The archived time-series CSV identifies primary selection, but does not retain a per-row spacecraft field. Do not assert a particular spacecraft for each row without separate instrument history.",
+      "simulated": false,
+      "interpolationApplied": false,
+      "backgroundSubtracted": false,
+      "maxGt10": {
+        "time_tag": "2024-05-10T17:45:00Z",
+        "gt5": 2660.996337890625,
+        "gt10": 206.9193420410156,
+        "gt30": 1.0023391246795654,
+        "gt50": 0.1893391460180282,
+        "gt60": 0.1773391515016555,
+        "gt100": 0.1723391562700271,
+        "gt500": 0.1693391501903534
+      },
+      "nullCounts": {
+        "gt5": 0,
+        "gt10": 0,
+        "gt30": 0,
+        "gt50": 0,
+        "gt60": 0,
+        "gt100": 0,
+        "gt500": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+'use client';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowRight, Cloud, Compass, ExternalLink, Globe2, Info, MapPin, Moon, Plane, RefreshCw, Sun } from 'lucide-react';
+import type { AuroraData } from '@/lib/types';
+import { CITIES } from '@/lib/science';
+import { DEG, HOUR, formatTime, greatCircle, solarAltitude } from '@/lib/physics';
+import { utc } from '@/lib/normalize';
+import { Panel, SourceLink } from './UI';
+type City=typeof CITIES[number];
+type Land={features:{geometry:{type:string;coordinates:number[][][]|number[][][][]}}[]};
+type GroundWeather={hourly?:{time:string[];cloud_cover:(number|null)[];cloud_cover_low:(number|null)[];cloud_cover_mid:(number|null)[];cloud_cover_high:(number|null)[]};sourceUrl?:string;error?:string};
+
+function AuroraGlobe({data,city,onCity,route}:{data:AuroraData|null;city:City;onCity:(c:City)=>void;route:[number,number][]}){
+ const ref=useRef<HTMLCanvasElement>(null),container=useRef<HTMLDivElement>(null),[land,setLand]=useState<Land|null>(null),[size,setSize]=useState({w:700,h:500}),[center,setCenter]=useState<[number,number]>([65,-60]);
+ const drag=useRef<{x:number;y:number;moved:boolean}|null>(null),pins=useRef<{x:number;y:number;city:City}[]>([]);
+ useEffect(()=>{fetch('/data/land.json').then(r=>r.json()).then(d=>setLand(d as Land)).catch(()=>{});},[]);
+ useEffect(()=>{setCenter([city.lat<0?-60:65,city.lon]);},[city.id]);
+ useEffect(()=>{if(!container.current)return;const ob=new ResizeObserver(e=>setSize({w:e[0].contentRect.width,h:e[0].contentRect.height}));ob.observe(container.current);return()=>ob.disconnect();},[]);
+ useEffect(()=>{
+  const canvas=ref.current;if(!canvas)return;const ctx=canvas.getContext('2d');if(!ctx)return;
+  const {w,h}=size,dpr=Math.min(devicePixelRatio||1,2);canvas.width=w*dpr;canvas.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  const cx=w/2,cy=h/2,r=Math.min(w*.41,h*.43),lat0=center[0]*DEG,lon0=center[1]*DEG;
+  const project=(lat:number,lon:number)=>{const phi=lat*DEG,lambda=lon*DEG-lon0;return {x:cx+r*Math.cos(phi)*Math.sin(lambda),y:cy-r*(Math.cos(lat0)*Math.sin(phi)-Math.sin(lat0)*Math.cos(phi)*Math.cos(lambda)),visible:Math.sin(lat0)*Math.sin(phi)+Math.cos(lat0)*Math.cos(phi)*Math.cos(lambda)>0};};
+  const outline=(points:[number,number][],color:string,width=1,fill=false)=>{ctx.beginPath();let drawing=false;for(const [lat,lon]of points){const p=project(lat,lon);if(!p.visible){drawing=false;continue;}if(drawing)ctx.lineTo(p.x,p.y);else ctx.moveTo(p.x,p.y);drawing=true;}ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();if(fill){ctx.fillStyle=color;ctx.fill();}};
+  const glow=ctx.createRadialGradient(cx,cy,r*.8,cx,cy,r*1.15);glow.addColorStop(0,'#65bcca00');glow.addColorStop(.7,'#65bcca15');glow.addColorStop(1,'#65bcca00');ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
+  const ocean=ctx.createRadialGradient(cx-r*.35,cy-r*.35,r*.1,cx,cy,r);ocean.addColorStop(0,'#132c3c');ocean.addColorStop(1,'#091621');ctx.fillStyle=ocean;ctx.beginPath();ctx.arc(cx,cy,r,0,2*Math.PI);ctx.fill();
+  ctx.save();ctx.beginPath();ctx.arc(cx,cy,r,0,2*Math.PI);ctx.clip();
+  if(land)for(const feature of land.features){const polygons=feature.geometry.type==='Polygon'?[feature.geometry.coordinates as number[][][]]:feature.geometry.coordinates as number[][][][];for(const polygon of polygons){const points=polygon[0].map(([lon,lat])=>[lat,lon] as [number,number]);outline(points,'#2b4852',.5,true);}}
+  for(let lat=-60;lat<=80;lat+=20)outline(Array.from({length:181},(_,i)=>[lat,i*2-180]),'#8aa9b019',.6);
+  for(let lon=-180;lon<180;lon+=30)outline(Array.from({length:91},(_,i)=>[i*2-90,lon]),'#8aa9b019',.6);
+  const validTime=utc(data?.forecastTime)??Date.now();
+  for(let lat=-88;lat<=88;lat+=4)for(let lon=-180;lon<180;lon+=4){const p=project(lat,lon);if(p.visible&&solarAltitude(lat,lon,validTime)<-2){ctx.fillStyle='#02070c45';ctx.fillRect(p.x-3,p.y-3,6,6);}}
+  if(data){ctx.globalCompositeOperation='screen';for(const row of data.coordinates){const [lon,lat,value]=row;if(value<2)continue;const p=project(lat,lon);if(!p.visible)continue;const intensity=Math.min(1,value/65),a=.08+intensity*.55;ctx.fillStyle=value>55?`rgba(245,204,90,${a})`:value>25?`rgba(84,242,164,${a})`:`rgba(48,189,137,${a*.8})`;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(1.2,r/85),0,2*Math.PI);ctx.fill();}ctx.globalCompositeOperation='source-over';}
+  if(route.length){for(let i=1;i<route.length;i++)outline([route[i-1],route[i]],'#f5b66b',1.7);}
+  pins.current=[];for(const c of CITIES){const p=project(c.lat,c.lon);if(!p.visible)continue;pins.current.push({...p,city:c});ctx.beginPath();ctx.arc(p.x,p.y,c.id===city.id?5:2.7,0,Math.PI*2);ctx.fillStyle=c.id===city.id?'#fff':'#9bb7c6';ctx.fill();if(c.id===city.id){ctx.beginPath();ctx.arc(p.x,p.y,11,0,Math.PI*2);ctx.strokeStyle='#64d7c27a';ctx.lineWidth=1;ctx.stroke();ctx.font='11px system-ui,sans-serif';ctx.fillStyle='#dce9e9';ctx.fillText(c.name,p.x+14,p.y+4);}}
+  ctx.restore();ctx.strokeStyle='#83c0ce35';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+  ctx.font='10px ui-monospace,monospace';ctx.fillStyle='#69828e';ctx.fillText('GEOGRAPHIC · ORTHOGRAPHIC',20,h-20);
+ },[data,city,land,size,center,route]);
+ return <div ref={container} className="aurora-globe"><canvas ref={ref} aria-label="NOAA OVATIONの実データを重ねた回転可能な地球儀" onPointerDown={e=>{drag.current={x:e.clientX,y:e.clientY,moved:false};e.currentTarget.setPointerCapture(e.pointerId);}} onPointerMove={e=>{if(!drag.current)return;const dx=e.clientX-drag.current.x,dy=e.clientY-drag.current.y;if(Math.abs(dx)+Math.abs(dy)>2)drag.current.moved=true;setCenter(c=>[Math.max(-85,Math.min(85,c[0]+dy*.3)),c[1]-dx*.4]);drag.current.x=e.clientX;drag.current.y=e.clientY;}} onPointerUp={e=>{if(!drag.current?.moved){const b=e.currentTarget.getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top;const p=pins.current.find(p=>Math.hypot(p.x-x,p.y-y)<20);if(p)onCity(p.city);}drag.current=null;}} onPointerCancel={()=>{drag.current=null;}}/><div className="globe-controls"><button className="small-button" onClick={()=>setCenter([75,city.lon])}>北半球</button><button className="small-button" onClick={()=>setCenter([-75,city.lon])}>南半球</button></div><div className="aurora-scale"><span>OVATION model</span><i/><div><span>0</span><span>50</span><span>100</span></div></div></div>;
+}
+export function AuroraView({tz}:{tz:string}){
+ const [data,setData]=useState<AuroraData|null>(null),[city,setCity]=useState(CITIES[0]),[ground,setGround]=useState<Record<string,GroundWeather>>({}),[routeEnabled,setRouteEnabled]=useState(false),[origin,setOrigin]=useState('fairbanks'),[destination,setDestination]=useState('tromso'),[duration,setDuration]=useState(5),[loading,setLoading]=useState(true);
+ const load=()=>{setLoading(true);fetch('/api/aurora').then(r=>{if(!r.ok)throw new Error();return r.json();}).then(d=>setData(d as AuroraData)).catch(()=>fetch('/data/aurora-snapshot.json').then(r=>r.json()).then(d=>setData(d as AuroraData))).finally(()=>setLoading(false));};
+ useEffect(()=>{load();const id=setInterval(load,300000);return()=>clearInterval(id);},[]);
+ useEffect(()=>{let active=true;Promise.all(CITIES.map(async c=>{try{const r=await fetch(`/api/aurora?lat=${c.lat}&lon=${c.lon}`),d=await r.json() as {data:GroundWeather;sourceUrl:string;error?:string};return [c.id,r.ok?{...d.data,sourceUrl:d.sourceUrl}:{error:d.error}] as const;}catch{return [c.id,{error:'気象データ未取得'}] as const;}})).then(entries=>{if(active)setGround(Object.fromEntries(entries));});return()=>{active=false;};},[]);
+ const target=utc(data?.forecastTime)??Date.now();
+ const originCity=CITIES.find(c=>c.id===origin)!,destCity=CITIES.find(c=>c.id===destination)!;
+ const route=useMemo(()=>routeEnabled?Array.from({length:101},(_,i)=>greatCircle([originCity.lat,originCity.lon],[destCity.lat,destCity.lon],i/100)):[],[routeEnabled,origin,destination]);
+ const routeNight=route.filter((p,i)=>solarAltitude(p[0],p[1],target+i/100*duration*HOUR)<-6).length/Math.max(1,route.length);
+ const atCity=(c:City)=>{
+  let best:number[]|null=null,min=Infinity;for(const p of data?.coordinates??[]){const lon=((p[0]+180)%360+360)%360-180;const d=(p[1]-c.lat)**2+((lon-c.lon+540)%360-180)**2*Math.cos(c.lat*DEG)**2;if(d<min){min=d;best=p;}}
+  const g=ground[c.id]?.hourly;let index=-1,delta=Infinity;
+  g?.time.forEach((t,i)=>{const gap=Math.abs((utc(t)??0)-target);if(gap<delta){delta=gap;index=i;}});
+  const cloud=g&&index>=0&&delta<HOUR?g.cloud_cover[index]:null;
+  return {model:best?.[2]??null,alt:solarAltitude(c.lat,c.lon,target),cloud,index};
+ };
+ const current=atCity(city);
+ return <>
+  <div className="workspace-intro"><span className="eyebrow">AURORA · EARTH & SKY</span><h2>宇宙の活動と、空の条件を重ねる。</h2><p>NOAAの短期オーロラモデルに、観測地点の暗さと雲量を併置します。各データの対象時刻をそろえて確認できます。</p></div>
+  <div className="aurora-layout"><Panel title="オーロラの分布" kicker="NOAA · OVATION" className="aurora-map-panel" action={<div className="heading-actions"><span className={'badge '+(data?.mode==='live'?'mint':'orange')}>{data?.mode==='live'?'NOAA MODEL':'保存済みモデル'}</span><button className="icon-button" title="オーロラデータを更新" onClick={load}><RefreshCw size={14} className={loading?'spinning':''}/></button></div>}><AuroraGlobe data={data} city={city} onCity={setCity} route={route}/><div className="aurora-map-footer"><div><span>入力観測</span><b>{formatTime(utc(data?.observationTime),tz)}</b></div><ArrowRight size={15}/><div><span>予報対象</span><b className="mint-text">{formatTime(target,tz)}</b></div><SourceLink href="https://www.spaceweather.gov/products/aurora-30-minute-forecast">NOAA</SourceLink></div></Panel>
+  <div><Panel title="観測地点" kicker="LOCATION INSPECTOR"><label className="field-label">地点を選ぶ<select value={city.id} onChange={e=>setCity(CITIES.find(c=>c.id===e.target.value)!)}>{CITIES.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><div className="location-title"><MapPin size={17}/><div><h3>{city.name}</h3><span>{city.en}</span></div></div><p className="coordinates">{Math.abs(city.lat).toFixed(2)}° {city.lat<0?'S':'N'} / {Math.abs(city.lon).toFixed(2)}° {city.lon<0?'W':'E'}</p><div className="location-metrics"><div><Globe2 size={17}/><span>近傍グリッドのモデル値</span><strong>{current.model??'—'}<small> / 100</small></strong></div><div>{current.alt<-6?<Moon size={17}/>:<Sun size={17}/>}<span>太陽高度 · {current.alt<-6?'暗い空':current.alt<0?'薄明':'昼間'}</span><strong>{current.alt.toFixed(1)}<small>°</small></strong></div><div><Cloud size={17}/><span>地上の雲量 · Open-Meteo</span><strong>{current.cloud??'—'}<small>%</small></strong></div></div><p className="fine-print">モデル値はNOAAの近傍格子の値です。雲や昼光を含む、その地点で見える確率には換算していません。</p><SourceLink href="https://open-meteo.com/">Weather data · Open-Meteo</SourceLink></Panel><div className="aurora-note"><Info size={16}/><p>OVATIONは通常30〜90分先の短期情報です。長期の旅行日程には、別の見通しが必要です。入力欠測時には予報先行時間がなくなる場合があります。</p></div></div></div>
+  <Panel title="観測地点を比べる" kicker="SAME TIME · DIFFERENT CONDITIONS" action={<span className="subtle-tag">{formatTime(target,tz)} {tz}</span>}><div className="table-scroll"><table className="data-table location-table"><thead><tr><th>観測地点</th><th>OVATION近傍値</th><th>空の暗さ</th><th>太陽高度</th><th>雲量</th><th>気象予報</th></tr></thead><tbody>{CITIES.map(c=>{const a=atCity(c);return <tr key={c.id} className={c.id===city.id?'selected':''} onClick={()=>setCity(c)}><td><b>{c.name}</b><span className="table-secondary">{c.en}</span></td><td><div className="model-intensity"><span>{a.model??'—'}</span><i><b style={{width:(a.model??0)+'%'}}/></i></div></td><td><span className={'badge '+(a.alt<-6?'mint':'neutral')}>{a.alt<-6?'DARK':a.alt<0?'TWILIGHT':'DAYLIGHT'}</span></td><td>{a.alt.toFixed(1)}°</td><td>{a.cloud===null?'—':a.cloud+'%'}</td><td>{ground[c.id]?.sourceUrl?<SourceLink href={ground[c.id].sourceUrl!}>Open-Meteo</SourceLink>:<span className="muted">{ground[c.id]?.error?'取得できません':'取得中…'}</span>}</td></tr>;})}</tbody></table></div></Panel>
+  <Panel title="航空ツアーのルートを重ねる" kicker="EXPLORATORY ROUTE · GREAT-CIRCLE PATH" action={<button className={'small-button '+(routeEnabled?'active':'')} onClick={()=>setRouteEnabled(x=>!x)}><Plane size={14}/>{routeEnabled?'ルートを非表示':'ルートを表示'}</button>}><div className="route-controls"><label className="field-label">出発地<select value={origin} onChange={e=>setOrigin(e.target.value)}>{CITIES.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><ArrowRight size={17}/><label className="field-label">目的地<select value={destination} onChange={e=>setDestination(e.target.value)}>{CITIES.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label className="field-label">所要時間<input aria-label="模擬ルートの所要時間" type="number" min="1" max="20" step="0.5" value={duration} onChange={e=>setDuration(Math.max(1,Math.min(20,Number(e.target.value))))}/></label><div className="route-result"><span>模擬経路で太陽高度 −6°未満</span><strong>{routeEnabled?Math.round(routeNight*100)+'%':'—'}</strong></div></div><p className="panel-description">予報対象時刻から出発する大圏ルートの模式実験です。運航経路や飛行高度を再現するものではなく、オーロラ分布はNOAAの対象時刻に固定しています。上空の視認性には雲頂・高度・見る方向も必要です。</p></Panel>
+ </>;
+}
