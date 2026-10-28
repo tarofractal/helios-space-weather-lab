@@ -1,13 +1,12 @@
 # HELIOS — Space Weather Lab
 
+**Project owner:** Taro Nagata
+
+**Live site:** [HELIOS — Space Weather Lab](https://helios-space-weather-lab-taro.tarofractal.chatgpt.site/?view=overview)
 
 An interactive space-weather platform connecting public observations, CME propagation models, historical event replay, and research notes.
 
-**GitHub公開の手順:** [GITHUB_SETUP.md](GITHUB_SETUP.md)
-
-The live demo is hosted with ChatGPT Sites. This repository is a source snapshot; pushing changes here does not automatically update that deployment. The application uses server API routes, Cloudflare Workers/D1, and ChatGPT sign-in for saved notes. GitHub Pages cannot run the full application unchanged. A separate production deployment must configure its own database and trusted authentication; the local preview's mock identity is for local development only.
-
-
+This repository contains the source code for the live site. Pushing changes here does not automatically update the live deployment. The application uses server API routes, Cloudflare Workers/D1, and ChatGPT sign-in for saved notes. GitHub Pages cannot run the full application unchanged. A separate production deployment must configure its own database and trusted authentication; the local preview's mock identity is for local development only.
 
 宇宙天気の実観測、CME伝播モデル、論文の判断根拠、研究ノートをつなぐWebプラットフォーム。
 
